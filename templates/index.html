@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Chatbot</title>
+
+<style>
+    body{
+        margin:0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(135deg,#0f172a,#1e293b);
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+    }
+
+    .chat-container{
+        width:420px;
+        height:600px;
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(12px);
+        border-radius:16px;
+        display:flex;
+        flex-direction:column;
+        overflow:hidden;
+        box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .header{
+        padding:12px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        font-size:18px;
+        font-weight:bold;
+        color:#fff;
+        background: rgba(255,255,255,0.05);
+    }
+
+    .clear-btn{
+        font-size:12px;
+        padding:6px 10px;
+        border:none;
+        border-radius:8px;
+        cursor:pointer;
+        background:#ef4444;
+        color:white;
+        transition:0.2s;
+    }
+
+    .clear-btn:hover{
+        background:#dc2626;
+    }
+
+    .chatbox{
+        flex:1;
+        padding:15px;
+        overflow-y:auto;
+    }
+
+    .msg{
+        max-width:75%;
+        padding:10px 12px;
+        margin:8px 0;
+        border-radius:12px;
+        font-size:14px;
+        line-height:1.4;
+        word-wrap:break-word;
+    }
+
+    .user{
+        background:#3b82f6;
+        color:#fff;
+        margin-left:auto;
+        border-bottom-right-radius:4px;
+    }
+
+    .bot{
+        background:#1f2937;
+        color:#e5e7eb;
+        margin-right:auto;
+        border-bottom-left-radius:4px;
+    }
+
+    .time{
+        display:block;
+        font-size:10px;
+        opacity:0.7;
+        margin-top:4px;
+    }
+
+    .input-area{
+        display:flex;
+        padding:10px;
+        background: rgba(255,255,255,0.05);
+    }
+
+    input{
+        flex:1;
+        padding:10px;
+        border:none;
+        border-radius:10px;
+        outline:none;
+        font-size:14px;
+    }
+
+    button{
+        margin-left:10px;
+        padding:10px 15px;
+        border:none;
+        border-radius:10px;
+        background:#22c55e;
+        color:white;
+        cursor:pointer;
+        transition:0.2s;
+    }
+
+    button:hover{
+        background:#16a34a;
+    }
+
+    .typing{
+        font-size:12px;
+        color:#9ca3af;
+        margin:5px 0;
+        font-style:italic;
+    }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header">
+        <span>Customer Support Chatbot</span>
+        <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+    </div>
+
+    <div id="chatbox" class="chatbox"></div>
+    <div id="typing" class="typing" style="display:none;">Bot is typing...</div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Type your message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+function escapeHTML(str){
+    return str.replace(/[&<>"']/g, function(m){
+        return ({
+            '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+        })[m];
+    });
+}
+
+function getTime(){
+    return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+function addMessage(text, type){
+    let chatbox = document.getElementById("chatbox");
+
+    let div = document.createElement("div");
+    div.classList.add("msg", type);
+    div.innerHTML = text + `<span class='time'>${getTime()}</span>`;
+
+    chatbox.appendChild(div);
+    chatbox.scrollTop = chatbox.scrollHeight;
+}
+
+function showTyping(show){
+    document.getElementById("typing").style.display = show ? "block" : "none";
+}
+
+function clearChat(){
+    document.getElementById("chatbox").innerHTML = "";
+}
+
+function sendMessage(){
+    let input = document.getElementById("userInput");
+    let msg = input.value.trim();
+
+    if(msg === "") return;
+
+    addMessage(escapeHTML(msg), "user");
+    input.value = "";
+
+    showTyping(true);
+
+    fetch("/get", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "msg=" + encodeURIComponent(msg)
+    })
+    .then(res => res.json())
+    .then(data => {
+        showTyping(false);
+        addMessage(escapeHTML(data.reply), "bot");
+    })
+    .catch(() => {
+        showTyping(false);
+        addMessage("Server error!", "bot");
+    });
+}
+
+window.onload = function(){
+    fetch("/history")
+    .then(res => res.json())
+    .then(data => {
+        data.forEach(chat => {
+            if(chat.user) addMessage(escapeHTML(chat.user), "user");
+            if(chat.bot) addMessage(escapeHTML(chat.bot), "bot");
+        });
+    });
+
+    document.getElementById("userInput").addEventListener("keypress", function(e){
+        if(e.key === "Enter") sendMessage();
+    });
+};
+</script>
+
+</body>
+</html>

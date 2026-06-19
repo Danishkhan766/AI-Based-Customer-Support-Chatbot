@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f2f2f2;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            width: 300px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        th {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Admin Panel</h2>
+
+    <!-- ADD FORM -->
+    <form action="/add" method="post">
+        <input type="text" name="question" placeholder="Enter Question" required>
+        <input type="text" name="answer" placeholder="Enter Answer" required>
+        <button type="submit">Add</button>
+    </form>
+
+    <!-- TABLE -->
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Question</th>
+            <th>Answer</th>
+            <th>Action</th>
+        </tr>
+
+        {% for item in data %}
+        <tr>
+            <td>{{ item[0] }}</td>
+            <td>{{ item[1] }}</td>
+            <td>{{ item[2] }}</td>
+
+            <td>
+                <form action="/delete" method="post">
+                    <input type="hidden" name="id" value="{{ item[0] }}">
+                    <button type="submit" style="background:red;">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</div>
+
+</body>
+</html>
